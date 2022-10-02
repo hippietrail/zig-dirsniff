@@ -3,7 +3,6 @@ const std = @import("std");
 const Opts = struct {
     d: bool = false,    // follow dot directories
     v: bool = false,    // verbose
-    ndb: bool = false,  // no debug
     maxdepth: ?i8 = 0,  // max depth when recursing
 };
 
@@ -17,11 +16,13 @@ pub fn main() !void {
 
     const clr = try processCommandline(al);
     const opts = clr.opts;
+    _ = opts;
     const args = clr.args;
-    if (!opts.ndb) std.debug.print("opts: {any}\n", .{opts});
-    for (args) |arg, i| {
-        std.debug.print("arg {} '{s}'\n", .{i, arg});
+    
+    for (args) |arg| {
+        try processFilename(arg);
     }
+    
     al.free(args);
 }
 
@@ -56,9 +57,6 @@ fn processCommandline(al: std.mem.Allocator) !CommandLineResults {
                 } else if (std.mem.eql(u8, sw, "v")) {
                     opts.v = true;
                     std.debug.print("-{s} = verbose\n", .{sw});
-                } else if (std.mem.eql(u8, sw, "ndb")) {
-                    opts.ndb = true;
-                    std.debug.print("-{s} = no debug\n", .{sw});
                 } else {
                     std.debug.print("* unknown switch: '{s}'\n", .{sw});
                 }
@@ -126,4 +124,35 @@ fn processCommandline(al: std.mem.Allocator) !CommandLineResults {
     //     i += 1;
     // }
     // std.debug.print("\n", .{});
+}
+
+fn processFilename(path:[]const u8) !void {
+    var dir = std.fs.cwd().openIterableDir(path, .{}) catch |err| {
+        switch (err) {
+            error.NotDir => {
+                std.debug.print("* not a directory: '{s}'\n", .{path});
+            },
+            error.FileNotFound => {
+                std.debug.print("* doesn't exist: '{s}'\n", .{path});
+            },
+            error.AccessDenied => {
+                std.debug.print("* access denied: '{s}'\n", .{path});
+            },
+            else => {
+                std.debug.print("** BANG: {s} {any}\n", .{path, err});
+                @panic("unexpected error trying to open a directory");
+            }
+        }
+        return;
+    };
+
+    std.debug.print("'{s}' -> dir result: {any}\n", .{path, dir});
+
+    var diri = dir.iterate();
+    while (try diri.next()) |necks| {
+        std.debug.print("  iterated: {s} ({any})\n", .{necks.name, necks.kind});
+    }
+    //dir.walk(allocator: Allocator)
+
+    dir.close();
 }
