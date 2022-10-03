@@ -16,11 +16,10 @@ pub fn main() !void {
 
     const clr = try processCommandline(al);
     const opts = clr.opts;
-    _ = opts;
     const args = clr.args;
     
     for (args) |arg| {
-        try processFilename(arg);
+        try processFilename(al, arg);
     }
     
     al.free(args);
@@ -126,7 +125,7 @@ fn processCommandline(al: std.mem.Allocator) !CommandLineResults {
     // std.debug.print("\n", .{});
 }
 
-fn processFilename(path:[]const u8) !void {
+fn processFilename(al: std.mem.Allocator, path:[]const u8) !void {
     var dir = std.fs.cwd().openIterableDir(path, .{}) catch |err| {
         switch (err) {
             error.NotDir => {
@@ -149,10 +148,32 @@ fn processFilename(path:[]const u8) !void {
     std.debug.print("'{s}' -> dir result: {any}\n", .{path, dir});
 
     var diri = dir.iterate();
+
     while (try diri.next()) |necks| {
         std.debug.print("  iterated: {s} ({any})\n", .{necks.name, necks.kind});
     }
-    //dir.walk(allocator: Allocator)
+
+    // var walker = try dir.walk(al);
+    // defer walker.deinit();
+
+    // std.debug.print("## walker: {any}\n", .{walker});
+
+    // while (try walker.next()) |entry| {
+    //     switch (entry.kind) {
+    //         .Directory => {
+    //             std.debug.print("## walked: {s}\t/\n", .{entry.path});
+    //         },
+    //         .File => {
+    //             std.debug.print("## walked: {s}\t-\n", .{entry.path});
+    //         },
+    //         .SymLink => {
+    //             std.debug.print("## walked: {s}\t=>\n", .{entry.path});
+    //         },
+    //         else => {
+    //             std.debug.print("## walked: {s}\t{any}\n", .{entry.path, entry.kind});
+    //         }
+    //     }
+    // }
 
     dir.close();
 }
