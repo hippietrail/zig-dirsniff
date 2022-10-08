@@ -32,8 +32,7 @@ fn processCommandline(al: std.mem.Allocator) !CommandLineResults {
 
     var opts: Opts = Opts{};
 
-    // os.argv
-    //   no allocation, no iterator
+    // os.argv = no allocation, no iterator
 
     var arglist = std.ArrayList([]const u8).init(al);
 
@@ -80,48 +79,6 @@ fn processCommandline(al: std.mem.Allocator) !CommandLineResults {
     }
 
     return CommandLineResults{.opts = opts, .args = arglist.toOwnedSlice()};
-
-
-    // process.args()
-    //   no allocation, has iterator
-
-    // std.debug.print("std.process.args\n", .{});
-    // var args = std.process.args();
-    // var i: usize = 0;
-    // while (args.next()) |arg| {
-    //     std.debug.print("args{}: {s}\n", .{i, arg});
-    //     i += 1;
-    // }
-    // std.debug.print("\n", .{});
-
-
-    // process.argsAlloc()
-    //   has allocation, no iterator
-
-    // std.debug.print("std.process.argsAlloc\n", .{});
-    // const argsA = try std.process.argsAlloc(al);
-    // defer std.process.argsFree(al, argsA);
-
-    // std.debug.print("argsA: {}\n", .{argsA.len});
-    // for (argsA) |arg, j| {
-    //     std.debug.print("argsA{}: {s}\n", .{j, arg});
-    // }
-    // std.debug.print("\n", .{});
-
-
-    // process.argsWithAllocator()
-    //   has allocation, has iterator
-
-    // std.debug.print("std.os.argsWithAllocator\n", .{});
-    // var argsWA = try std.process.argsWithAllocator(al);
-    // defer argsWA.deinit();
-
-    // i = 0;
-    // while (argsWA.next()) |arg| {
-    //     std.debug.print("argsWA{}: {s}\n", .{i, arg});
-    //     i += 1;
-    // }
-    // std.debug.print("\n", .{});
 }
 
 fn myLessThan(_: void, lhs: []const u8, rhs: []const u8) bool {
@@ -186,10 +143,6 @@ fn processFilename(al: std.mem.Allocator, cwd: std.fs.Dir, path:[]const u8) !voi
         try dirent_list.append(str);
     }
 
-    // TODO how to print in sorted order?
-    //std.sort.sort([]const u8, dirent_list.toOwnedSlice, void, std.ascii.lessThanIgnoreCase);
-    //std.sort.sort([]const u8, dirent_list.items, void, std.ascii.lessThanIgnoreCase);
-    //std.sort.sort([]const u8, dirent_list.items, void, std.mem.order);
     std.sort.sort([]const u8, dirent_list.items, {}, myLessThan);
 
     for (dirent_list.items) |dirent| {
@@ -200,26 +153,4 @@ fn processFilename(al: std.mem.Allocator, cwd: std.fs.Dir, path:[]const u8) !voi
         al.free(dirent);
     }
     dirent_list.deinit();
-
-    // var walker = try dir.walk(al);
-    // defer walker.deinit();
-
-    // std.debug.print("## walker: {any}\n", .{walker});
-
-    // while (try walker.next()) |entry| {
-    //     switch (entry.kind) {
-    //         .Directory => {
-    //             std.debug.print("## walked: {s}\t/\n", .{entry.path});
-    //         },
-    //         .File => {
-    //             std.debug.print("## walked: {s}\t-\n", .{entry.path});
-    //         },
-    //         .SymLink => {
-    //             std.debug.print("## walked: {s}\t=>\n", .{entry.path});
-    //         },
-    //         else => {
-    //             std.debug.print("## walked: {s}\t{any}\n", .{entry.path, entry.kind});
-    //         }
-    //     }
-    // }
 }
