@@ -19,7 +19,7 @@ pub fn main() !void {
     const args = clr.args;
     
     for (args) |arg| {
-        try processFilename(std.fs.cwd(), arg);
+        try processFilename(al, std.fs.cwd(), arg);
     }
     
     al.free(args);
@@ -124,7 +124,14 @@ fn processCommandline(al: std.mem.Allocator) !CommandLineResults {
     // std.debug.print("\n", .{});
 }
 
-fn processFilename(cwd: std.fs.Dir, path:[]const u8) !void {
+// handle one path, from only one source for now:
+// a) on the commandline, in which case it might erroneously be a file or a nonexistent path
+//    from main()
+fn processFilename(al: std.mem.Allocator, cwd: std.fs.Dir, path:[]const u8) !void {
+    // equivalent of ts readdirAndStat
+    // get the dirent of each entry in this directory
+    // but we need to add more info: file sizes and errors. only the former will be used in matching
+
     var dir = cwd.openIterableDir(path, .{}) catch |err| {
         var msg: ?[]const u8 = switch (err) {
             error.NotDir => "not a directory",
@@ -140,9 +147,11 @@ fn processFilename(cwd: std.fs.Dir, path:[]const u8) !void {
     };
     defer dir.close();
 
-    var diri = dir.iterate();
+    var dirit = dir.iterate();
 
-    while (try diri.next()) |entry| {
+    var dirent_list = std.ArrayList([]const u8).init(al);
+
+    while (try dirit.next()) |entry| {
         // check for zero-length files and unopenable files
         var kindSymbol: ?u8 = null;
         if (entry.kind == .File) blk: {
@@ -165,8 +174,20 @@ fn processFilename(cwd: std.fs.Dir, path:[]const u8) !void {
             };
         }
 
-        std.debug.print("{c} {s}\n", .{kindSymbol.?, entry.name});
+        const str = try std.fmt.allocPrint(al, "{c} {s}", .{kindSymbol.?, entry.name});
+        try dirent_list.append(str);
     }
+
+    // TODO how to print in sorted order?
+
+    for (dirent_list.items) |dirent| {
+        std.debug.print("{s}\n", .{dirent});
+    }
+
+    for (dirent_list.items) |dirent| {
+        al.free(dirent);
+    }
+    dirent_list.deinit();
 
     // var walker = try dir.walk(al);
     // defer walker.deinit();
