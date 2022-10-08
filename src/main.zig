@@ -124,6 +124,14 @@ fn processCommandline(al: std.mem.Allocator) !CommandLineResults {
     // std.debug.print("\n", .{});
 }
 
+fn myLessThan(_: void, lhs: []const u8, rhs: []const u8) bool {
+    // hmm our text is really UTF-8 not ASCII
+    // std.ascii.lessThanIgnoreCase
+    //return std.ascii.lessThanIgnoreCase(lhs, rhs);
+    
+    return std.mem.order(u8, lhs[2..], rhs[2..]) == .lt;
+}
+
 // handle one path, from only one source for now:
 // a) on the commandline, in which case it might erroneously be a file or a nonexistent path
 //    from main()
@@ -179,6 +187,10 @@ fn processFilename(al: std.mem.Allocator, cwd: std.fs.Dir, path:[]const u8) !voi
     }
 
     // TODO how to print in sorted order?
+    //std.sort.sort([]const u8, dirent_list.toOwnedSlice, void, std.ascii.lessThanIgnoreCase);
+    //std.sort.sort([]const u8, dirent_list.items, void, std.ascii.lessThanIgnoreCase);
+    //std.sort.sort([]const u8, dirent_list.items, void, std.mem.order);
+    std.sort.sort([]const u8, dirent_list.items, {}, myLessThan);
 
     for (dirent_list.items) |dirent| {
         std.debug.print("{s}\n", .{dirent});
